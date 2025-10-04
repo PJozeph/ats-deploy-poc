@@ -3,10 +3,18 @@ steps:
   - name: gcr.io/cloud-builders/docker
     id: Build API Image
     dir: ats-service
-    args: [ "build", "-t", "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE_API}:${COMMIT_SHA}", "-f", "Dockerfile", "." ]
+    args:
+      - build
+      - -t
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE_API}:${COMMIT_SHA}'
+      - -f
+      - Dockerfile
+      - .
   - name: gcr.io/cloud-builders/docker
     id: Push API Image
-    args: [ "push", "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE_API}:${COMMIT_SHA}" ]
+    args:
+      - push
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE_API}:${COMMIT_SHA}'
   - name: gcr.io/google.com/cloudsdktool/cloud-sdk
     id: Deploy API to Cloud Run
     entrypoint: gcloud
@@ -17,15 +25,29 @@ steps:
       - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE_API}:${COMMIT_SHA}
       - --region=${_REGION}
       - --platform=${_PLATFORM}
+      # uncomment as needed:
+      # - --allow-unauthenticated
+      # - --port=8080
+      # - --set-env-vars=NODE_ENV=production,OTHER=val
+      # - --cpu=1 --memory=512Mi
+      # - --min-instances=0 --max-instances=10
 
   # --- WEB (Angular) ---
   - name: gcr.io/cloud-builders/docker
     id: Build Web Image
     dir: ats-ui
-    args: [ "build", "-t", "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE_WEB}:${COMMIT_SHA}", "-f", "Dockerfile", "." ]
+    args:
+      - build
+      - -t
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE_WEB}:${COMMIT_SHA}'
+      - -f
+      - Dockerfile
+      - .
   - name: gcr.io/cloud-builders/docker
     id: Push Web Image
-    args: [ "push", "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE_WEB}:${COMMIT_SHA}" ]
+    args:
+      - push
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE_WEB}:${COMMIT_SHA}'
   - name: gcr.io/google.com/cloudsdktool/cloud-sdk
     id: Deploy Web to Cloud Run
     entrypoint: gcloud
@@ -36,6 +58,9 @@ steps:
       - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE_WEB}:${COMMIT_SHA}
       - --region=${_REGION}
       - --platform=${_PLATFORM}
+      # For Angular-on-Cloud-Run (often served by nginx/node):
+      # - --allow-unauthenticated
+      # - --port=8080
 
 options:
   logging: CLOUD_LOGGING_ONLY
