@@ -1,0 +1,78 @@
+options:
+  logging: CLOUD_LOGGING_ONLY
+substitutions:
+  _REGION: asia-southeast1
+  _REPO: app-repo
+  _PROJECT: $PROJECT_ID
+  _FRONTEND_IMAGE: $_REGION-docker.pkg.dev/${_PROJECT}/${_REPO}/frontend
+  _API_IMAGE: $_REGION-docker.pkg.dev/${_PROJECT}/${_REPO}/api
+  _FRONTEND_SERVICE: frontend-web
+  _API_SERVICE: api-server
+
+steps:
+  # Build & push frontend
+  - name: gcr.io/cloud-builders/docker
+    args: ["build", "-t", "${_FRONTEND_IMAGE}:$SHORT_SHA", "apps/frontend"]
+  - name: gcr.io/cloud-builders/docker
+    args: ["push", "${_FRONTEND_IMAGE}:$SHORT_SHA"]
+
+  # Build & push API
+  - name: gcr.io/cloud-builders/docker
+    args: ["build", "-t", "${_API_IMAGE}:$SHORT_SHA", "apps/api"]
+  - name: gcr.io/cloud-builders/docker
+    args: ["push", "${_API_IMAGE}:$SHORT_SHA"]
+
+  # Deploy frontend (public)
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      [
+        "run",
+        "deploy",
+        "${_FRONTEND_SERVICE}",
+        "--image",
+        "${_FRONTEND_IMAGE}:$SHORT_SHA",
+        "--region",
+        "${_REGION}",
+        "--platform",
+        "managed",
+        "--allow-unauthenticated",
+        "--port",
+        "8080",
+        "--max-instances",
+        "5",
+        "--memory",
+        "256Mi",
+        "--cpu",
+        "1",
+      ]
+
+  # Deploy API (public or private)
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args: [
+        "run",
+        "deploy",
+        "${_API_SERVICE}",
+        "--image",
+        "${_API_IMAGE}:$SHORT_SHA",
+        "--region",
+        "${_REGION}",
+        "--platform",
+        "managed",
+        "--allow-unauthenticated", # remove if you want private + IAP/Auth
+        "--port",
+        "8080",
+        "--max-instances",
+        "5",
+        "--concurrency",
+        "80",
+        "--memory",
+        "512Mi",
+        "--cpu",
+        "1",
+      ]
+
+images:
+  - ${_FRONTEND_IMAGE}:$SHORT_SHA
+  - ${_API_IMAGE}:$SHORT_SHA
