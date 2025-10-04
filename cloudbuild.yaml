@@ -1,93 +1,63 @@
-# ats-deploy-poc/cloudbuild.yaml
-# Builds Docker images for ats-ui (Angular) and ats-service (NestJS),
-# pushes to Artifact Registry, and deploys each to Cloud Run.
-
-options:
-  logging: CLOUD_LOGGING_ONLY
-  machineType: E2_HIGHCPU_8
-
-substitutions:
-  # Customize these:
-  _REGION: asia-southeast1         # e.g., asia-southeast1 (closest to Bangkok)
-  _REPO: apps                      # Artifact Registry repo name (create once)
-  _UI_SERVICE: ats-ui
-  _API_SERVICE: ats-service
-
-# These built-ins are provided by Cloud Build:
-# $PROJECT_ID, $COMMIT_SHA
-
 steps:
-  # Authenticate Docker to Artifact Registry
-  - name: gcr.io/google.com/cloudsdktool/cloud-sdk:latest
-    id: auth-docker
-    entrypoint: bash
-    args:
-      - -c
-      - |
-        gcloud auth configure-docker ${_REGION}-docker.pkg.dev -q
-
-  # ===== Build ats-ui (Angular) =====
+  # --- API (NestJS) ---
   - name: gcr.io/cloud-builders/docker
-    id: build-ui
-    dir: ats-ui
-    args:
-      [
-        "build",
-        "-t", "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/ats-ui:${COMMIT_SHA}",
-        "-t", "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/ats-ui:latest",
-        "."
-      ]
-
-  # ===== Build ats-service (NestJS) =====
-  - name: gcr.io/cloud-builders/docker
-    id: build-api
+    id: Build API Image
     dir: ats-service
     args:
-      [
-        "build",
-        "-t", "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/ats-service:${COMMIT_SHA}",
-        "-t", "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/ats-service:latest",
-        "."
-      ]
+      - build
+      - -t
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE_API}:${COMMIT_SHA}'
+      - -f
+      - Dockerfile
+      - .
+  - name: gcr.io/cloud-builders/docker
+    id: Push API Image
+    args:
+      - push
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE_API}:${COMMIT_SHA}'
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    id: Deploy API to Cloud Run
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_SERVICE_API}
+      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE_API}:${COMMIT_SHA}
+      - --region=${_REGION}
+      - --platform=${_PLATFORM}
+      # uncomment as needed:
+      # - --allow-unauthenticated
+      # - --port=8080
+      # - --set-env-vars=NODE_ENV=production,OTHER=val
+      # - --cpu=1 --memory=512Mi
+      # - --min-instances=0 --max-instances=10
 
-  # ===== Push images =====
-  # - name: gcr.io/cloud-builders/docker
-  #   id: push-ui
-  #   args: [ "push", "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/ats-ui:${COMMIT_SHA}" ]
-  # - name: gcr.io/cloud-builders/docker
-  #   id: push-ui-latest
-  #   args: [ "push", "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/ats-ui:latest" ]
-
-  # - name: gcr.io/cloud-builders/docker
-  #   id: push-api
-  #   args: [ "push", "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/ats-service:${COMMIT_SHA}" ]
-  # - name: gcr.io/cloud-builders/docker
-  #   id: push-api-latest
-  #   args: [ "push", "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/ats-service:latest" ]
-
-  # ===== Deploy to Cloud Run =====
-#   - name: gcr.io/google.com/cloudsdktool/cloud-sdk:latest
-#     id: deploy-ui
-#     entrypoint: bash
-#     args:
-#       - -c
-#       - |
-#         gcloud run deploy ${_UI_SERVICE} \
-#           --image ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/ats-ui:${COMMIT_SHA} \
-#           --region ${_REGION} --platform managed --allow-unauthenticated \
-#           --port 8080 --cpu 1 --memory 512Mi --max-instances 10
-
-#   - name: gcr.io/google.com/cloudsdktool/cloud-sdk:latest
-#     id: deploy-api
-#     entrypoint: bash
-#     args:
-#       - -c
-#       - |
-#         gcloud run deploy ${_API_SERVICE} \
-#           --image ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/ats-service:${COMMIT_SHA} \
-#           --region ${_REGION} --platform managed --allow-unauthenticated \
-#           --port 3000 --cpu 1 --memory 512Mi --max-instances 10
-
-# images:
-#   - "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/ats-ui:${COMMIT_SHA}"
-#   - "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/ats-service:${COMMIT_SHA}"
+  # --- WEB (Angular) ---
+  - name: gcr.io/cloud-builders/docker
+    id: Build Web Image
+    dir: ats-ui
+    args:
+      - build
+      - -t
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE_WEB}:${COMMIT_SHA}'
+      - -f
+      - Dockerfile
+      - .
+  - name: gcr.io/cloud-builders/docker
+    id: Push Web Image
+    args:
+      - push
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE_WEB}:${COMMIT_SHA}'
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    id: Deploy Web to Cloud Run
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_SERVICE_WEB}
+      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE_WEB}:${COMMIT_SHA}
+      - --region=${_REGION}
+      - --platform=${_PLATFORM}
+      # For Angular-on-Cloud-Run (often served by nginx/node):
+      # - --allow-unauthenticated
+      # - --port=8080
