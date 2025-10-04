@@ -1,0 +1,13 @@
+FROM node:18.19.1-alpine as build
+WORKDIR /app
+COPY ./package*.json ./
+
+RUN npm ci
+
+COPY ./ ./
+RUN npm run build:development
+
+FROM nginx:1.23.0-alpine
+EXPOSE 8080
+COPY nginx.conf /etc/nginx/nginx.conf
+COPY --from=build /app/dist/lern-code-ui/browser /usr/share/nginx/html
