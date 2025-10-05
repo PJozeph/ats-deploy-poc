@@ -34,7 +34,8 @@ steps:
       - --platform=${_PLATFORM}
       - --allow-unauthenticated
       - --port=3000
-      - --min-instances=0 --max-instances=5
+      - --min-instances=0
+      - --max-instances=5
       # uncomment as needed:
       # - --allow-unauthenticated
       # - --port=8080
@@ -69,7 +70,8 @@ steps:
       - --platform=${_PLATFORM}
       - --allow-unauthenticated
       - --port=8080
-      - --min-instances=0 --max-instances=5
+      - --min-instances=0
+      - --max-instances=5
 
       # For Angular-on-Cloud-Run (often served by nginx/node):
       # - --allow-unauthenticated
