@@ -8,6 +8,6 @@ export class FooService {
   private httpClient: HttpClient = inject(HttpClient);
 
   getHello() {
-    return this.httpClient.get<string>('https://ats-web-1041765018913.europe-central2.run.app/');
+    return this.httpClient.get<string>('https://ats-api-1041765018913.europe-central2.run.app/');
   }
 }
