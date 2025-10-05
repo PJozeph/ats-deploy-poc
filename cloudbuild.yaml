@@ -1,3 +1,10 @@
+substitutions:
+  _REGION: europe-central2          # e.g. us-central1, europe-west1, etc.
+  _AR_REPO: ats                      # your Artifact Registry repo name (create it first)
+  _SERVICE_API: ats-api              # Cloud Run service name for API
+  _SERVICE_WEB: ats-web              # Cloud Run service name for Web
+  _PLATFORM: managed                 # Cloud Run platform
+
 steps:
   # --- API (NestJS) ---
   - name: gcr.io/cloud-builders/docker
