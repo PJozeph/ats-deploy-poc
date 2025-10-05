@@ -34,12 +34,12 @@ steps:
       - --platform=${_PLATFORM}
       - --allow-unauthenticated
       - --port=3000
+      - --min-instances=0 --max-instances=5
       # uncomment as needed:
       # - --allow-unauthenticated
       # - --port=8080
       # - --set-env-vars=NODE_ENV=production,OTHER=val
       # - --cpu=1 --memory=512Mi
-      # - --min-instances=0 --max-instances=10
 
   # --- WEB (Angular) ---
   - name: gcr.io/cloud-builders/docker
@@ -69,6 +69,7 @@ steps:
       - --platform=${_PLATFORM}
       - --allow-unauthenticated
       - --port=8080
+      - --min-instances=0 --max-instances=5
 
       # For Angular-on-Cloud-Run (often served by nginx/node):
       # - --allow-unauthenticated
