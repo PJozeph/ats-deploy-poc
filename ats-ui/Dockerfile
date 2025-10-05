@@ -5,7 +5,7 @@ COPY ./package*.json ./
 RUN npm ci
 
 COPY ./ ./
-RUN npm run build:development
+RUN npm run build
 
 FROM nginx:1.23.0-alpine
 EXPOSE 8080
