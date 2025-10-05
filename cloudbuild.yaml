@@ -65,6 +65,9 @@ steps:
       - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE_WEB}:${COMMIT_SHA}
       - --region=${_REGION}
       - --platform=${_PLATFORM}
+      - --allow-unauthenticated
+      - --port=8080
+
       # For Angular-on-Cloud-Run (often served by nginx/node):
       # - --allow-unauthenticated
       # - --port=8080
