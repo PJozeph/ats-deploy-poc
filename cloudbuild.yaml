@@ -33,6 +33,7 @@ steps:
       - --region=${_REGION}
       - --platform=${_PLATFORM}
       - --allow-unauthenticated
+      - --port=3000
       # uncomment as needed:
       # - --allow-unauthenticated
       # - --port=8080
